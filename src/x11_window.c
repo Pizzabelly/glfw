@@ -2717,7 +2717,7 @@ void _glfwPlatformGetRequiredInstanceExtensions(char** extensions)
     if (!_glfw.vk.KHR_surface)
         return;
 
-    if (!_glfw.vk.KHR_xcb_surface || !_glfw.x11.x11xcb.handle)
+    if (!_glfw.vk.KHR_xcb_surface)
     {
         if (!_glfw.vk.KHR_xlib_surface)
             return;
@@ -2727,7 +2727,7 @@ void _glfwPlatformGetRequiredInstanceExtensions(char** extensions)
 
     // NOTE: VK_KHR_xcb_surface is preferred due to some early ICDs exposing but
     //       not correctly implementing VK_KHR_xlib_surface
-    if (_glfw.vk.KHR_xcb_surface && _glfw.x11.x11xcb.handle)
+    if (_glfw.vk.KHR_xcb_surface)
         extensions[1] = "VK_KHR_xcb_surface";
     else
         extensions[1] = "VK_KHR_xlib_surface";
@@ -2740,7 +2740,7 @@ int _glfwPlatformGetPhysicalDevicePresentationSupport(VkInstance instance,
     VisualID visualID = XVisualIDFromVisual(DefaultVisual(_glfw.x11.display,
                                                           _glfw.x11.screen));
 
-    if (_glfw.vk.KHR_xcb_surface && _glfw.x11.x11xcb.handle)
+    if (_glfw.vk.KHR_xcb_surface)
     {
         PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR
             vkGetPhysicalDeviceXcbPresentationSupportKHR =
@@ -2791,7 +2791,7 @@ VkResult _glfwPlatformCreateWindowSurface(VkInstance instance,
                                           const VkAllocationCallbacks* allocator,
                                           VkSurfaceKHR* surface)
 {
-    if (_glfw.vk.KHR_xcb_surface && _glfw.x11.x11xcb.handle)
+    if (_glfw.vk.KHR_xcb_surface)
     {
         VkResult err;
         VkXcbSurfaceCreateInfoKHR sci;
