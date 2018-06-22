@@ -406,6 +406,7 @@ GLFWAPI void glfwSetX11SelectionString(const char* string);
  *  @ingroup native
  */
 GLFWAPI const char* glfwGetX11SelectionString(void);
+
 #endif
 
 #if defined(GLFW_EXPOSE_NATIVE_GLX)
@@ -626,6 +627,27 @@ GLFWAPI int glfwGetOSMesaDepthBuffer(GLFWwindow* window, int* width, int* height
  *  @ingroup native
  */
 GLFWAPI OSMesaContext glfwGetOSMesaContext(GLFWwindow* window);
+#endif
+
+#if defined(GLFW_EXPOSE_NATIVE_X11) || defined(GLFW_EXPOSE_NATIVE_WAYLAND)
+/*! @brief Returns the scancode for the given XKB key name
+ *
+ *  The list of key names can be found in the xkbcommon/xkbcommon-keysyms.h
+ *  header file. You should use the name without the leading XKB_ prefix.
+ *  For example, KEY_a.
+ *  Matching can be case-sensitive or case insensitive. See the documentation
+ *  of the xkb_keysym_from_name() function for the meaning of case-sensitivity.
+ *
+ *  @return The scancode corresponding to the specified name, or 0 if no
+ *  match was found.
+ *
+ *  @thread_safety This function can be called from any thread
+ *
+ *  @since Added in version 4.0.
+ *
+ *  @ingroup native
+ */
+GLFWAPI int glfwGetXKBScancode(const char* keyName, GLFWbool caseSensitive);
 #endif
 
 #ifdef __cplusplus
