@@ -723,7 +723,7 @@ void _glfwPlatformGetFramebufferSize(_GLFWwindow* window, int* width, int* heigh
 
 int _glfwPlatformCreateCursor(_GLFWcursor* cursor,
                               const GLFWimage* image,
-                              int xhot, int yhot)
+                              int xhot, int yhot, int count)
 {
     MirBufferStream* stream;
 
@@ -972,4 +972,3 @@ GLFWAPI MirWindow* glfwGetMirWindow(GLFWwindow* handle)
     _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
     return window->mir.window;
 }
-
