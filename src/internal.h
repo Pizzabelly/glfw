@@ -46,7 +46,7 @@
 #endif
 
 #define GLFW_INCLUDE_NONE
-#include "../include/GLFW/glfw3.h"
+#include "glfw3.h"
 
 #define _GLFW_INSERT_FIRST      0
 #define _GLFW_INSERT_LAST       1
@@ -59,6 +59,7 @@
 #define _GLFW_MESSAGE_SIZE      1024
 
 typedef int GLFWbool;
+typedef unsigned long long GLFWid;
 
 typedef struct _GLFWerror       _GLFWerror;
 typedef struct _GLFWinitconfig  _GLFWinitconfig;
@@ -378,6 +379,7 @@ struct _GLFWwindow
     GLFWbool            focusOnShow;
     GLFWbool            shouldClose;
     void*               userPointer;
+    GLFWid              id;
     GLFWvidmode         videoMode;
     _GLFWmonitor*       monitor;
     _GLFWcursor*        cursor;
@@ -526,6 +528,7 @@ struct _GLFWlibrary
     _GLFWerror*         errorListHead;
     _GLFWcursor*        cursorListHead;
     _GLFWwindow*        windowListHead;
+    GLFWid              focusedWindowId;
 
     _GLFWmonitor**      monitors;
     int                 monitorCount;
@@ -671,6 +674,7 @@ void _glfwPlatformSetWindowResizable(_GLFWwindow* window, GLFWbool enabled);
 void _glfwPlatformSetWindowDecorated(_GLFWwindow* window, GLFWbool enabled);
 void _glfwPlatformSetWindowFloating(_GLFWwindow* window, GLFWbool enabled);
 void _glfwPlatformSetWindowOpacity(_GLFWwindow* window, float opacity);
+void _glfwPlatformUpdateIMEState(_GLFWwindow *w, int which, int a, int b, int c, int d);
 
 void _glfwPlatformPollEvents(void);
 void _glfwPlatformWaitEvents(void);
@@ -767,5 +771,7 @@ const char* _glfwGetKeyName(int key);
 GLFWbool _glfwInitVulkan(int mode);
 void _glfwTerminateVulkan(void);
 const char* _glfwGetVulkanResultString(VkResult result);
+_GLFWwindow* _glfwFocusedWindow();
+_GLFWwindow* _glfwWindowForId(GLFWid id);
 
 char* _glfw_strdup(const char* source);

@@ -1083,15 +1083,9 @@ is_ascii_control_char(char x) {
 }
 
 - (void)loadMainMenu
-{
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1080
-    [[NSBundle mainBundle] loadNibNamed:@"MainMenu"
-                                  owner:NSApp
-                        topLevelObjects:&nibObjects];
-#else
-    [[NSBundle mainBundle] loadNibNamed:@"MainMenu" owner:NSApp];
-#endif
+{ // removed by Kovid as it generated compiler warnings 
 }
+
 @end
 
 // Set up the menu bar (manually)

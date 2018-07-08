@@ -308,7 +308,7 @@ static void pointerHandleButton(void* data,
                          state == WL_POINTER_BUTTON_STATE_PRESSED
                                 ? GLFW_PRESS
                                 : GLFW_RELEASE,
-                         _glfw.wl.xkb.modifiers);
+                         _glfw.wl.xkb.states.modifiers);
 }
 
 static void pointerHandleAxis(void* data,
@@ -407,6 +407,15 @@ static void keyboardHandleLeave(void* data,
     _glfwInputWindowFocus(window, GLFW_FALSE);
 }
 
+static void
+dispatchPendingKeyRepeats(id_type timer_id, void *data) {
+    if (_glfw.wl.keyRepeatInfo.keyboardFocus != _glfw.wl.keyboardFocus || _glfw.wl.keyboardRepeatRate == 0) return;
+    glfw_xkb_handle_key_event(_glfw.wl.keyRepeatInfo.keyboardFocus, &_glfw.wl.xkb, _glfw.wl.keyRepeatInfo.key, GLFW_REPEAT);
+    changeTimerInterval(&_glfw.wl.eventLoopData, _glfw.wl.keyRepeatInfo.keyRepeatTimer, ((double)_glfw.wl.keyboardRepeatRate) / 1000.0);
+    toggleTimer(&_glfw.wl.eventLoopData, _glfw.wl.keyRepeatInfo.keyRepeatTimer, 1);
+}
+
+
 static void keyboardHandleKey(void* data,
                               struct wl_keyboard* keyboard,
                               uint32_t serial,
@@ -419,14 +428,18 @@ static void keyboardHandleKey(void* data,
         return;
     int action = state == WL_KEYBOARD_KEY_STATE_PRESSED ? GLFW_PRESS : GLFW_RELEASE;
     glfw_xkb_handle_key_event(window, &_glfw.wl.xkb, key, action);
-    _glfw.wl.keyRepeatInfo.nextRepeatAt = 0;
+    GLFWbool repeatable = GLFW_FALSE;
 
     if (action == GLFW_PRESS && _glfw.wl.keyboardRepeatRate > 0 && glfw_xkb_should_repeat(&_glfw.wl.xkb, key))
     {
         _glfw.wl.keyRepeatInfo.key = key;
-        _glfw.wl.keyRepeatInfo.nextRepeatAt = glfwGetTime() + (double)(_glfw.wl.keyboardRepeatDelay) / 1000.0;
+        repeatable = GLFW_TRUE;
         _glfw.wl.keyRepeatInfo.keyboardFocus = window;
     }
+    if (repeatable) {
+        changeTimerInterval(&_glfw.wl.eventLoopData, _glfw.wl.keyRepeatInfo.keyRepeatTimer, (double)(_glfw.wl.keyboardRepeatDelay) / 1000.0);
+    }
+    toggleTimer(&_glfw.wl.eventLoopData, _glfw.wl.keyRepeatInfo.keyRepeatTimer, repeatable ? 1 : 0);
 }
 
 static void keyboardHandleModifiers(void* data,
@@ -664,7 +677,9 @@ int _glfwPlatformInit(void)
                         "Wayland: Failed to connect to display");
         return GLFW_FALSE;
     }
-    initPollData(_glfw.wl.eventLoopData.fds, _glfw.wl.eventLoopData.wakeupFds[0], wl_display_get_fd(_glfw.wl.display));
+    initPollData(&_glfw.wl.eventLoopData, _glfw.wl.eventLoopData.wakeupFds[0], wl_display_get_fd(_glfw.wl.display));
+    glfw_dbus_init(&_glfw.wl.dbus, &_glfw.wl.eventLoopData);
+    _glfw.wl.keyRepeatInfo.keyRepeatTimer = addTimer(&_glfw.wl.eventLoopData, "wayland-keyrepeat", 0.5, 0, dispatchPendingKeyRepeats, NULL);
 
     _glfw.wl.registry = wl_display_get_registry(_glfw.wl.display);
     wl_registry_add_listener(_glfw.wl.registry, &registryListener, NULL);
@@ -713,6 +728,7 @@ void _glfwPlatformTerminate(void)
     }
 
     glfw_xkb_release(&_glfw.wl.xkb);
+    glfw_dbus_terminate(&_glfw.wl.dbus);
 
     if (_glfw.wl.cursorTheme)
         wl_cursor_theme_destroy(_glfw.wl.cursorTheme);

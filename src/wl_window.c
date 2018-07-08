@@ -689,33 +689,13 @@ static GLFWbool createXdgSurface(_GLFWwindow* window)
 }
 
 static void
-dispatchPendingKeyRepeats() {
-    if (_glfw.wl.keyRepeatInfo.nextRepeatAt <= 0 || _glfw.wl.keyRepeatInfo.keyboardFocus != _glfw.wl.keyboardFocus || _glfw.wl.keyboardRepeatRate == 0) return;
-    double now = glfwGetTime();
-    while (_glfw.wl.keyRepeatInfo.nextRepeatAt <= now) {
-        glfw_xkb_handle_key_event(_glfw.wl.keyRepeatInfo.keyboardFocus, &_glfw.wl.xkb, _glfw.wl.keyRepeatInfo.key, GLFW_REPEAT);
-        _glfw.wl.keyRepeatInfo.nextRepeatAt += 1.0 / _glfw.wl.keyboardRepeatRate;
-        now = glfwGetTime();
-    }
-}
-
-static double
-adjustTimeoutForKeyRepeat(double timeout) {
-    if (_glfw.wl.keyRepeatInfo.nextRepeatAt <= 0 || _glfw.wl.keyRepeatInfo.keyboardFocus != _glfw.wl.keyboardFocus || _glfw.wl.keyboardRepeatRate == 0) return timeout;
-    double now = glfwGetTime();
-    if (timeout < 0 || now + timeout > _glfw.wl.keyRepeatInfo.nextRepeatAt) {
-        timeout = _glfw.wl.keyRepeatInfo.nextRepeatAt <= now ? 0 : ( (_glfw.wl.keyRepeatInfo.nextRepeatAt - now) + 0.001 );
-    }
-    return timeout;
-}
-
-static void
 handleEvents(double timeout)
 {
     struct wl_display* display = _glfw.wl.display;
 
-    while (wl_display_prepare_read(display) != 0)
+    while (wl_display_prepare_read(display) != 0) {
         wl_display_dispatch_pending(display);
+    }
 
     // If an error different from EAGAIN happens, we have likely been
     // disconnected from the Wayland session, try to handle that the best we
@@ -732,25 +712,8 @@ handleEvents(double timeout)
         return;
     }
 
-    dispatchPendingKeyRepeats();
-    timeout = adjustTimeoutForKeyRepeat(timeout);
-    GLFWbool read_ok = GLFW_FALSE;
-    for (nfds_t i = 0; i < 2; i++) _glfw.wl.eventLoopData.fds[i].revents = 0;
-
-    if (timeout >= 0) {
-        const int result = pollWithTimeout(_glfw.wl.eventLoopData.fds, 2, timeout);
-        if (result > 0)
-        {
-            if (_glfw.wl.eventLoopData.fds[0].revents & POLLIN) drainFd(_glfw.wl.eventLoopData.fds[0].fd);
-            read_ok = _glfw.wl.eventLoopData.fds[1].revents & POLLIN;
-        }
-    } else {
-        if (poll(_glfw.wl.eventLoopData.fds, 2, -1) > 0) {
-            if (_glfw.wl.eventLoopData.fds[0].revents & POLLIN) drainFd(_glfw.wl.eventLoopData.fds[0].fd);
-            read_ok = _glfw.wl.eventLoopData.fds[1].revents & POLLIN;
-        }
-    }
-    if (read_ok) {
+    GLFWbool display_read_ok = pollForEvents(&_glfw.wl.eventLoopData, timeout);
+    if (display_read_ok) {
         wl_display_read_events(display);
         wl_display_dispatch_pending(display);
     }
@@ -758,7 +721,7 @@ handleEvents(double timeout)
     {
         wl_display_cancel_read(display);
     }
-    dispatchPendingKeyRepeats();
+    glfw_ibus_dispatch(&_glfw.wl.xkb.ibus);
 }
 
 // Translates a GLFW standard cursor to a theme cursor name
@@ -1200,16 +1163,19 @@ void _glfwPlatformSetWindowOpacity(_GLFWwindow* window, float opacity)
 
 void _glfwPlatformPollEvents(void)
 {
+    wl_display_dispatch_pending(_glfw.wl.display);
     handleEvents(0);
 }
 
 void _glfwPlatformWaitEvents(void)
 {
-    handleEvents(-1);
+    double timeout = wl_display_dispatch_pending(_glfw.wl.display) > 0 ? 0 : -1;
+    handleEvents(timeout);
 }
 
 void _glfwPlatformWaitEventsTimeout(double timeout)
 {
+    if (wl_display_dispatch_pending(_glfw.wl.display) > 0) timeout = 0;
     handleEvents(timeout);
 }
 
@@ -1544,6 +1510,11 @@ VkResult _glfwPlatformCreateWindowSurface(VkInstance instance,
     }
 
     return err;
+}
+
+void
+_glfwPlatformUpdateIMEState(_GLFWwindow *w, int which, int a, int b, int c, int d) {
+    glfw_xkb_update_ime_state(w, &_glfw.wl.xkb, which, a, b, c, d);
 }
 
 
