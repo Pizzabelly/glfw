@@ -24,6 +24,10 @@
 //
 //========================================================================
 
+// _POSIX_C_SOURCE needed for fileno() on Linux systems
+#define _POSIX_C_SOURCE 1
+#include <stdio.h>
+#undef _POSIX_C_SOURCE
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +50,20 @@ enum Capabilities {
     IBUS_CAP_PROPERTY           = 1 << 4,
     IBUS_CAP_SURROUNDING_TEXT   = 1 << 5
 };
+
+// implement strdup ourselves because the various unix/libc flavors all
+// require different sets of macros to make it available, and I cannot be
+// bothered
+static inline char*
+strdup(const char *src) {
+    size_t len = strlen(src);
+    char *ans = malloc(len + 1);
+    if (ans) {
+        memcpy(ans, src, len);
+        ans[len] = 0;
+    }
+    return ans;
+}
 
 
 static inline GLFWbool
