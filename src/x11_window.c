@@ -183,15 +183,6 @@ static int translateState(int state)
     return mods;
 }
 
-static int translateKey(int scancode)
-{
-    // Use the pre-filled LUT (see createKeyTables() in x11_init.c)
-    if (scancode < 0 || scancode > 255)
-        return GLFW_KEY_UNKNOWN;
-
-    return _glfw.x11.keycodes[scancode];
-}
-
 // Sends an EWMH or ICCCM event to the window manager
 //
 static void sendEventToWM(_GLFWwindow* window, Atom type,
