@@ -234,6 +234,7 @@ GLFWAPI id glfwGetCocoaWindow(GLFWwindow* window);
  *  @ingroup native
  */
 typedef int (* GLFWcocoatextinputfilterfun)(int,int,unsigned int);
+GLFWAPI GLFWcocoatextinputfilterfun glfwSetCocoaTextInputFilter(GLFWwindow* window, GLFWcocoatextinputfilterfun callback);
 /*! @brief Set the callback used to control which key presses are passed to the cocoa text input system.
  *
  *  By default, on macOS, pressing the Option modifier and a letter key
@@ -248,15 +249,18 @@ typedef int (* GLFWcocoatextinputfilterfun)(int,int,unsigned int);
  *
  *  @ingroup native
  */
-GLFWAPI GLFWcocoatextinputfilterfun glfwSetCocoaTextInputFilter(GLFWwindow* window, GLFWcocoatextinputfilterfun callback);
-/*! @brief Convert a GLFW modifer and key pair into their Cocoa equivalents
+typedef int (* GLFWcocoatogglefullscreenfun)(GLFWwindow *);
+GLFWcocoatogglefullscreenfun glfwSetCocoaToggleFullscreenIntercept(GLFWwindow *window, GLFWcocoatogglefullscreenfun callback);
+/*! @brief Set callback used to control the macOS native fullscreen button.
  *
- *  Useful, for instance, to create Cocoa menu items based on glfw keys.
+ *  Return 1 if you want to handle fullscreening yourself.
  *
  *  @since Added in version 4.0.
  *
  *  @ingroup native
  */
+
+
 GLFWAPI void glfwGetCocoaKeyEquivalent(int glfw_key, int glfw_mods, unsigned short *cocoa_key, int *cocoa_mods);
 /*! @brief The function signature for Cocoa applicationShouldHandleReopen callbacks
  *
